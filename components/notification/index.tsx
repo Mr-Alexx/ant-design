@@ -1,16 +1,22 @@
-import * as React from 'react';
-import Notification from 'rc-notification';
-import { NotificationInstance as RCNotificationInstance } from 'rc-notification/lib/Notification';
-import CloseOutlined from '@ant-design/icons/CloseOutlined';
-import classNames from 'classnames';
 import CheckCircleOutlined from '@ant-design/icons/CheckCircleOutlined';
 import CloseCircleOutlined from '@ant-design/icons/CloseCircleOutlined';
+import CloseOutlined from '@ant-design/icons/CloseOutlined';
 import ExclamationCircleOutlined from '@ant-design/icons/ExclamationCircleOutlined';
 import InfoCircleOutlined from '@ant-design/icons/InfoCircleOutlined';
-import createUseNotification from './hooks/useNotification';
+import classNames from 'classnames';
+import Notification from 'rc-notification';
+import type { NotificationInstance as RCNotificationInstance } from 'rc-notification/lib/Notification';
+import * as React from 'react';
 import ConfigProvider, { globalConfig } from '../config-provider';
+import createUseNotification from './hooks/useNotification';
 
-export type NotificationPlacement = 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight';
+export type NotificationPlacement =
+  | 'top'
+  | 'topLeft'
+  | 'topRight'
+  | 'bottom'
+  | 'bottomLeft'
+  | 'bottomRight';
 
 export type IconType = 'success' | 'info' | 'error' | 'warning';
 
@@ -79,6 +85,15 @@ function getPlacementStyle(
 ) {
   let style;
   switch (placement) {
+    case 'top':
+      style = {
+        left: '50%',
+        transform: 'translateX(-50%)',
+        right: 'auto',
+        top,
+        bottom: 'auto',
+      };
+      break;
     case 'topLeft':
       style = {
         left: 0,
@@ -91,6 +106,15 @@ function getPlacementStyle(
         right: 0,
         top,
         bottom: 'auto',
+      };
+      break;
+    case 'bottom':
+      style = {
+        left: '50%',
+        transform: 'translateX(-50%)',
+        right: 'auto',
+        top: 'auto',
+        bottom,
       };
       break;
     case 'bottomLeft':
@@ -124,7 +148,6 @@ function getNotificationInstance(
     top,
     bottom,
     getContainer = defaultGetContainer,
-    closeIcon = defaultCloseIcon,
     prefixCls: customizePrefixCls,
   } = args;
   const { getPrefixCls, getIconPrefixCls } = globalConfig();
@@ -133,6 +156,7 @@ function getNotificationInstance(
 
   const cacheKey = `${prefixCls}-${placement}`;
   const cacheInstance = notificationInstance[cacheKey];
+
   if (cacheInstance) {
     Promise.resolve(cacheInstance).then(instance => {
       callback({ prefixCls: `${prefixCls}-notice`, iconPrefixCls, instance });
@@ -140,12 +164,6 @@ function getNotificationInstance(
 
     return;
   }
-
-  const closeIconToRender = (
-    <span className={`${prefixCls}-close-x`}>
-      {closeIcon || <CloseOutlined className={`${prefixCls}-close-icon`} />}
-    </span>
-  );
 
   const notificationClass = classNames(`${prefixCls}-${placement}`, {
     [`${prefixCls}-rtl`]: rtl === true,
@@ -158,7 +176,6 @@ function getNotificationInstance(
         className: notificationClass,
         style: getPlacementStyle(placement, top, bottom),
         getContainer,
-        closeIcon: closeIconToRender,
         maxCount,
       },
       notification => {
@@ -189,6 +206,7 @@ export interface ArgsProps {
   duration?: number | null;
   icon?: React.ReactNode;
   placement?: NotificationPlacement;
+  maxCount?: number;
   style?: React.CSSProperties;
   prefixCls?: string;
   className?: string;
@@ -213,6 +231,7 @@ function getRCNoticeProps(args: ArgsProps, prefixCls: string, iconPrefixCls?: st
     key,
     style,
     className,
+    closeIcon = defaultCloseIcon,
   } = args;
 
   const duration = durationArg === undefined ? defaultDuration : durationArg;
@@ -225,6 +244,12 @@ function getRCNoticeProps(args: ArgsProps, prefixCls: string, iconPrefixCls?: st
       className: `${prefixCls}-icon ${prefixCls}-icon-${type}`,
     });
   }
+
+  const closeIconToRender = (
+    <span className={`${prefixCls}-close-x`}>
+      {closeIcon || <CloseOutlined className={`${prefixCls}-close-icon`} />}
+    </span>
+  );
 
   const autoMarginTag =
     !description && iconNode ? (
@@ -247,6 +272,7 @@ function getRCNoticeProps(args: ArgsProps, prefixCls: string, iconPrefixCls?: st
     ),
     duration,
     closable: true,
+    closeIcon: closeIconToRender,
     onClose,
     onClick,
     key,
